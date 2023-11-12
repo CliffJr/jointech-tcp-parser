@@ -73,7 +73,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		return Decoded{}, fmt.Errorf("Minimum packet size is 45 Bytes, got %v", len(*bs))
 	}
 
-	// check for jointech packet validity
+	// check for JT packet validity
 	if (*bs)[0] != 0x24 && (*bs)[0] != 0x28 {
 		return Decoded{}, fmt.Errorf("Probably not JoinTech packet, trashed")
 	}
