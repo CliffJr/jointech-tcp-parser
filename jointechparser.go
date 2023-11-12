@@ -75,7 +75,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 
 	// check for JT packet validity
 	if (*bs)[0] != 0x24 && (*bs)[0] != 0x28 {
-		return Decoded{}, fmt.Errorf("Probably not JoinTech packet, trashed")
+		return Decoded{}, fmt.Errorf("Probably not JT packet, trashed")
 	}
 
 	// determine bit number where start data, it can change because of IMEI length
