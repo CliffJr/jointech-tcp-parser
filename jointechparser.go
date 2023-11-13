@@ -1,5 +1,4 @@
 // Copyright 2023 Filip Kroča.
-// All rights reserved.
 package jointechparser
 
 import (
