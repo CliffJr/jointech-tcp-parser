@@ -3,15 +3,14 @@ package jointechparser
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/CliffJr/b2n"
+	"strconv"
 )
 
 // Decoded struct represent decoded E-Lock JointTech data structure with all ACL(Automated Container Lock) data as return from function Decode
 type Decoded struct {
 	ProtocolHeader        uint8
-	ProtocolVersion       uint8
+	ProtocolVersion       string
 	IMEI                  string
 	TerminalID            string
 	Date                  string
@@ -19,7 +18,7 @@ type Decoded struct {
 	DataType              string
 	DataLength            string
 	DirectionIndicator    string
-	Mileage               string
+	Mileage               int64
 	BindVehicleID         string
 	DeviceStatus          string
 	BatteryLevel          uint8
@@ -125,10 +124,12 @@ func Decode(bs *[]byte) (Decoded, error) {
 	nextByte = nextByte + 5
 
 	// determine protocol version in packet
-	decoded.ProtocolVersion, err = b2n.ParseBs2Uint8(bs, nextByte)
+	parsedProtocol, err := b2n.ParseBs2String(bs, 6, 2)
 	if err != nil {
-		return Decoded{}, fmt.Errorf("Decode error, %v", err)
+		return Decoded{}, fmt.Errorf("Convert uint64 error, %v", err)
 	}
+
+	decoded.ProtocolVersion = parsedProtocol
 
 	// increment nextByte counter
 	nextByte++
@@ -176,10 +177,17 @@ func Decode(bs *[]byte) (Decoded, error) {
 	}
 
 	// determine mileage in packet
-	decoded.Mileage, err = b2n.ParseBs2String(bs, 27, 8)
+	parseMileage, err := b2n.ParseBs2String(bs, 27, 8)
 	if err != nil {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
+
+	parsedMileage, err := strconv.ParseInt(parseMileage, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	decoded.Mileage = parsedMileage
 
 	// determine bind vehicle id in packet
 	decoded.BindVehicleID, err = b2n.ParseBs2String(bs, 32, 8)

@@ -6,36 +6,73 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // toHumanReadable updates some fields in Decoded and returns human-readable data as JSON
-func (d *Decoded) toHumanReadable() (string, error) {
+func (d *Decoded) toHumanRead() (string, error) {
 	// Update or modify fields as needed
-	//type Decoded struct {
-	//	ProtocolHeader        uint8
-	//	ProtocolVersion       uint8
-	//	IMEI                  string
-	//	TerminalID            string
-	//	Date                  string
-	//	DeviceType            string
-	//	DataType              string
-	//	DataLength            string
-	//	DirectionIndicator    string
-	//	Mileage               string
-	//	BindVehicleID         string
-	//	DeviceStatus          string
-	//	BatteryLevel          uint8
-	//	CellIdPositionCode    string
-	//	GSMSignalQuality      uint8
-	//	FenceAlarmID          uint8
-	//	MNCHighByte           uint8
-	//	ExpandedDeviceStatus  uint8
-	//	ExpandedDeviceStatus2 uint8
-	//	DataSerialNo          uint8
-	//	Data                  []ACLData // Slice with ACL data
-	//}
-	d.DeviceType = "Updated Device Type"
-	d.DataType = "Updated Data Type"
+	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
+	d.DeviceType = deviceType(d.DeviceType)
+	d.DataType = dataType(d.DataType)
+
+	dataLength, err := hexToBinary(d.DataLength)
+	if err != nil {
+		return "", fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	d.DataLength = dataLength
+	d.Date = parseDate(d.Date)
+
+	directionIndicator, err := hexToByte(d.DirectionIndicator)
+	if err != nil {
+		return "", fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	fixedValue, longitude, latitude, positioning := decodeDirectionIndicator(directionIndicator)
+
+	d.DirectionIndicator = fixedValue + "," + longitude + "," + latitude + "," + positioning
+
+	mileage, err := hexToDecimal(strconv.FormatInt(d.Mileage, 10))
+	if err != nil {
+		return "", fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	d.Mileage = mileage
+
+	d.DeviceStatus = deviceStatus(d.DeviceStatus)
+
+	d.GSMSignalQuality = GSMSignalQuality(d.GSMSignalQuality)
+
+	// make slice for decoded data
+	d.Data = make([]ACLData, 0, len(d.Data))
+
+	decodedData := ACLData{}
+
+	//standardize lat
+	lat, err := parseLatLng(int(decodedData.Lat))
+	if err != nil {
+		return "", fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	decodedData.Lat = lat
+
+	//standardize lng
+	lng, err := parseLatLng(int(decodedData.Lng))
+	if err != nil {
+		return "", fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	decodedData.Lng = lng
+
+	//standardize speed
+	speed, err := parseSpeed(strconv.Itoa(int(decodedData.Speed)))
+	decodedData.Speed = speed
+
+	//standardize angle/direction
+	angle, err := direction(strconv.Itoa(int(decodedData.Angle)))
+
+	decodedData.Angle = uint16(angle)
 
 	// Convert Decoded to JSON
 	jsonData, err := json.Marshal(d)
@@ -47,33 +84,111 @@ func (d *Decoded) toHumanReadable() (string, error) {
 	return string(jsonData), nil
 }
 
-func protocolVersion(value uint8) string {
-	if value == 19 {
+func protocolVersion(value string) string {
+	if value == "19" {
 		return "JT701D"
 	}
 	return "JT701"
 }
 
-func latLng(latOrLng int) (float64, error) {
+func deviceType(value string) string {
+	// Extract the first 4 bits (0.5 byte)
+	intValue, err := strconv.ParseInt(value, 16, 32)
+	if err != nil {
+		_ = fmt.Errorf("converting error, %v", err)
+	}
+
+	firstHalf := intValue & 0x0F
+
+	fmt.Printf("First 0.5 byte: %X\n", firstHalf)
+
+	switch firstHalf {
+	case 1:
+		return "Regular rechargeable JT701"
+	default:
+		return "Unknown data type"
+	}
+}
+
+func dataType(value string) string {
+	// Extract the first 4 bits (0.5 byte)
+	intValue, err := strconv.ParseInt(value, 16, 32)
+	if err != nil {
+		_ = fmt.Errorf("converting error, %v", err)
+	}
+
+	// Extract the second 4 bits (another 0.5 byte)
+	secondHalf := (intValue >> 4) & 0x0F
+	fmt.Printf("Second 0.5 byte: %X\n", secondHalf)
+	switch secondHalf {
+	case 1:
+		return "Processing real-time position data"
+	case 2:
+		return "Processing alarm data"
+	case 3:
+		return "Processing blind area position data"
+	case 4:
+		return "Processing sub-new position data (newly added by JT701D)"
+	default:
+		return "Unknown data type"
+	}
+}
+
+func parseDate(dateString string) string {
+	layout := "020106" // DDMMYY layout
+
+	// Parse the date string
+	parsedTime, err := time.Parse(layout, dateString)
+	if err != nil {
+		_ = fmt.Errorf("converting error, %v", err)
+	}
+
+	utcTime := parsedTime.String()
+	return utcTime
+}
+
+func decodeDirectionIndicator(value byte) (string, string, string, string) {
+	// Extract individual bits using bitwise operations
+	bit0 := (value & 0x01) == 0x01
+	bit1 := (value & 0x02) == 0x02
+	bit2 := (value & 0x04) == 0x04
+	bit3 := (value & 0x08) == 0x08
+
+	// Interpret the bits
+	positioning := "GPS not positioning"
+	if bit0 {
+		positioning = "GPS positioning"
+	}
+
+	latitude := "north latitude"
+	if !bit1 {
+		latitude = "south latitude"
+	}
+
+	longitude := "east longitude"
+	if !bit2 {
+		longitude = "west longitude"
+	}
+
+	fixedValue := "fixed value.1"
+	if !bit3 {
+		fixedValue = "fixed value.0"
+	}
+
+	return fixedValue, longitude, latitude, positioning
+}
+
+func parseLatLng(latOrLng int) (int32, error) {
 	degrees := latOrLng / 1000000
 	minutes := (latOrLng % 1000000) / 10000
 	decimalMinutes := float64(latOrLng%10000) / 10000.0
 	final := float64(degrees) + (float64(minutes)+decimalMinutes)/60.0
 	scale := math.Pow(10, float64(6))
 	formatted := math.Round(final*scale) / scale
-	return formatted, nil
+	return int32(formatted), nil
 }
 
-func batteryLevel(value string) (float64, error) {
-	decimalValue, err := strconv.ParseInt(value, 16, 64)
-	if err != nil {
-		_ = fmt.Errorf("converting error, %v", err)
-	}
-
-	return float64(decimalValue), nil
-}
-
-func speed(value string) (float64, error) {
+func parseSpeed(value string) (uint16, error) {
 	decimalValue, err := strconv.ParseInt(value, 16, 64)
 	if err != nil {
 		_ = fmt.Errorf("converting error, %v", err)
@@ -83,7 +198,7 @@ func speed(value string) (float64, error) {
 	scale := math.Pow(10, float64(6))
 	formatted := math.Round(speed*scale) / scale
 
-	return formatted, nil
+	return uint16(formatted), nil
 }
 
 func direction(value string) (float64, error) {
@@ -97,30 +212,25 @@ func direction(value string) (float64, error) {
 	return float64(direction), nil
 }
 
-func deviceType(value string) int64 {
-	// Extract the first 4 bits (0.5 byte)
-	intValue, err := strconv.ParseInt(value, 16, 32)
+func hexToDecimal(hexString string) (int64, error) {
+	// Convert hexadecimal string to decimal
+	decimalValue, err := strconv.ParseInt(hexString, 0, 0)
 	if err != nil {
-		_ = fmt.Errorf("converting error, %v", err)
+		return 0, err
 	}
 
-	firstHalf := intValue & 0x0F
-
-	fmt.Printf("First 0.5 byte: %X\n", firstHalf)
-	return firstHalf
+	return decimalValue, nil
 }
 
-func dataType(value string) int64 {
-	// Extract the first 4 bits (0.5 byte)
-	intValue, err := strconv.ParseInt(value, 16, 32)
-	if err != nil {
-		_ = fmt.Errorf("converting error, %v", err)
+func hexToByte(hexString string) (byte, error) {
+	// Convert hex string to byte
+	var b byte
+	n, err := fmt.Sscanf(hexString, "%02x", &b)
+	if err != nil || n != 1 {
+		return 0, fmt.Errorf("error converting hex to byte: %v", err)
 	}
 
-	// Extract the second 4 bits (another 0.5 byte)
-	secondHalf := (intValue >> 4) & 0x0F
-	fmt.Printf("Second 0.5 byte: %X\n", secondHalf)
-	return secondHalf
+	return b, nil
 }
 
 func hexToBinary(hexStr string) (string, error) {
@@ -136,7 +246,7 @@ func hexToBinary(hexStr string) (string, error) {
 	return binaryStr, nil
 }
 
-func deviceStatus(value string) {
+func deviceStatus(value string) string {
 	binaryStr, err := hexToBinary(value)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -147,7 +257,7 @@ func deviceStatus(value string) {
 	for state, value := range deviceStatus {
 		fmt.Printf("%s: %v\n", state, value)
 	}
-
+	return ""
 }
 
 func parseDeviceStatus(binaryStr string) map[string]bool {
@@ -197,4 +307,11 @@ func bitToInt(bit string) int {
 	byteNum := parts[0]
 	bitNum := parts[1]
 	return (int(byteNum[0]-'0')-1)*8 + int(bitNum[3]-'0')
+}
+
+func GSMSignalQuality(value uint8) uint8 {
+	if value == 0 {
+		return 99
+	}
+	return value
 }
