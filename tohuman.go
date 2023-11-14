@@ -33,12 +33,12 @@ func (d *Decoded) toHumanRead() (string, error) {
 
 	d.DirectionIndicator = fixedValue + "," + longitude + "," + latitude + "," + positioning
 
-	mileage, err := hexToDecimal(strconv.FormatInt(d.Mileage, 10))
+	mileage, err := hexToDecimal(d.Mileage)
 	if err != nil {
 		return "", fmt.Errorf("Error converting to Binary: %v", err)
 	}
 
-	d.Mileage = mileage
+	d.Mileage = strconv.FormatInt(mileage, 10)
 
 	d.DeviceStatus = deviceStatus(d.DeviceStatus)
 
@@ -92,7 +92,7 @@ func protocolVersion(value string) string {
 }
 
 func deviceType(value string) string {
-	// Extract the first 4 bits (0.5 byte)
+	//Extract the first 4 bits (0.5 byte)
 	intValue, err := strconv.ParseInt(value, 16, 32)
 	if err != nil {
 		_ = fmt.Errorf("converting error, %v", err)
@@ -122,13 +122,13 @@ func dataType(value string) string {
 	fmt.Printf("Second 0.5 byte: %X\n", secondHalf)
 	switch secondHalf {
 	case 1:
-		return "Processing real-time position data"
+		return "Real-time position data"
 	case 2:
-		return "Processing alarm data"
+		return "Alarm data"
 	case 3:
-		return "Processing blind area position data"
+		return "Blind area position data"
 	case 4:
-		return "Processing sub-new position data (newly added by JT701D)"
+		return "Sub-new position data (newly added by JT701D)"
 	default:
 		return "Unknown data type"
 	}
@@ -254,10 +254,12 @@ func deviceStatus(value string) string {
 
 	deviceStatus := parseDeviceStatus(binaryStr)
 
+	result := ""
 	for state, value := range deviceStatus {
-		fmt.Printf("%s: %v\n", state, value)
+		result += fmt.Sprintf("%s: %v\n", state, value)
 	}
-	return ""
+
+	return result
 }
 
 func parseDeviceStatus(binaryStr string) map[string]bool {
