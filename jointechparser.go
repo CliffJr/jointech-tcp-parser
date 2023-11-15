@@ -293,8 +293,6 @@ func Decode(bs *[]byte) (Decoded, error) {
 		decodedData.Speed = float64(parsedSpeed)
 
 		decoded.Data = append(decoded.Data, decodedData)
-		//decoded.Data[i] = decodedData
-
 	}
 
 	return decoded, nil

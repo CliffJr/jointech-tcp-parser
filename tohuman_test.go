@@ -49,11 +49,7 @@ func TestToHumanReadable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, humanReadable)
 
-	// Manually update the expected Decoded object based on the transformations in the toHumanReadable method
 	expectedDecoded := decoded
-	expectedDecoded.ProtocolVersion = protocolVersion(decoded.ProtocolVersion)
-	expectedDecoded.DeviceType = deviceType(decoded.DeviceType)
-	expectedDecoded.DataType = dataType(decoded.DataType)
 
 	// Convert the expected Decoded object to JSON
 	expectedJSON, err := json.Marshal(expectedDecoded)

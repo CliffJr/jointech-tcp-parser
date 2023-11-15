@@ -44,35 +44,42 @@ func (d *Decoded) toHumanReadable() (string, error) {
 
 	d.GSMSignalQuality = GSMSignalQuality(d.GSMSignalQuality)
 
-	// make slice for decoded data
-	d.Data = make([]ACLData, 0, len(d.Data))
+	// go through data
+	for _, v := range d.Data {
+		decodedData := ACLData{}
 
-	decodedData := ACLData{}
+		//standardize date
 
-	//standardize lat
-	lat, err := parseLatLng(int(decodedData.Lat))
-	if err != nil {
-		return "", fmt.Errorf("Error converting to Binary: %v", err)
+		//standardize date
+
+		//standardize lat
+		lat, err := parseLatLng(int(v.Lat))
+		if err != nil {
+			return "", fmt.Errorf("Error converting to Binary: %v", err)
+		}
+
+		decodedData.Lat = lat
+
+		//standardize lng
+		lng, err := parseLatLng(int(v.Lng))
+		if err != nil {
+			return "", fmt.Errorf("Error converting to Binary: %v", err)
+		}
+
+		decodedData.Lng = lng
+
+		//standardize speed
+		speed, err := parseSpeed(strconv.Itoa(int(v.Speed)))
+		decodedData.Speed = speed
+
+		//standardize angle/direction
+		angle, err := direction(strconv.Itoa(int(v.Angle)))
+
+		decodedData.Angle = angle
+
+		d.Data = append(d.Data, decodedData)
+
 	}
-
-	decodedData.Lat = lat
-
-	//standardize lng
-	lng, err := parseLatLng(int(decodedData.Lng))
-	if err != nil {
-		return "", fmt.Errorf("Error converting to Binary: %v", err)
-	}
-
-	decodedData.Lng = lng
-
-	//standardize speed
-	speed, err := parseSpeed(strconv.Itoa(int(decodedData.Speed)))
-	decodedData.Speed = speed
-
-	//standardize angle/direction
-	angle, err := direction(strconv.Itoa(int(decodedData.Angle)))
-
-	decodedData.Angle = angle
 
 	// Convert Decoded to JSON
 	jsonData, err := json.Marshal(d)
