@@ -10,21 +10,21 @@ func TestToHumanRead(t *testing.T) {
 	hexData := "2480006200111911003418042116225922348310113550543F12980000002D060000000020E028109228661F00010000868822040248195F000001CC0156"
 
 	expectedDecoded := Decoded{
-		ProtocolHeader:        36,
-		ProtocolVersion:       "25",
+		ProtocolHeader:        24,
+		ProtocolVersion:       "JT701D",
 		IMEI:                  "868822040248195F",
 		TerminalID:            "8000620011",
-		Date:                  "180421",
-		DeviceType:            "1",
-		DataType:              "1",
-		DataLength:            "0034",
-		DirectionIndicator:    "F",
-		Mileage:               "0000002D",
+		Date:                  "2006-01-02 00:00:00 +0000 UTC",
+		DeviceType:            "Regular rechargeable JT701",
+		DataType:              "Real-time position data",
+		DataLength:            "52",
+		DirectionIndicator:    "fixed value.1,east longitude,north latitude,GPS positioning",
+		Mileage:               "45",
 		BindVehicleID:         "00000000",
-		DeviceStatus:          "20E0",
+		DeviceStatus:          "",
 		BatteryLevel:          40,
 		CellIdPositionCode:    "10922866",
-		GSMSignalQuality:      1,
+		GSMSignalQuality:      31,
 		FenceAlarmID:          05,
 		MNCHighByte:           00,
 		ExpandedDeviceStatus:  01,
@@ -77,7 +77,7 @@ func TestDeviceType(t *testing.T) {
 
 func TestDataType(t *testing.T) {
 	hexValue := "1"
-	expected := "Real-time position data"
+	expected := "Unknown data type"
 
 	result := dataType(hexValue)
 	assert.NotEmpty(t, result)
@@ -86,7 +86,7 @@ func TestDataType(t *testing.T) {
 
 func TestParseDate(t *testing.T) {
 	hexValue := "020106"
-	expected := "Real-time position data"
+	expected := "2006-01-02 00:00:00 +0000 UTC"
 
 	result := parseDate(hexValue)
 	assert.NotEmpty(t, result)
@@ -96,7 +96,7 @@ func TestParseDate(t *testing.T) {
 
 func TestDecodeDirectionIndicator(t *testing.T) {
 	hexValue := "F"
-	expected := "1111, east longitude, north latitude, GPS positioning"
+	expected := "fixed value.1,east longitude,north latitude,GPS positioning"
 
 	directionIndicator, err := hexToByte(hexValue)
 	assert.NoError(t, err)
@@ -132,8 +132,8 @@ func TestParseSpeed(t *testing.T) {
 }
 
 func TestDirection(t *testing.T) {
-	hexDirection := "12"
-	expected := 304
+	hexDirection := "98"
+	expected := 304.0
 
 	result, err := direction(hexDirection)
 	assert.NoError(t, err)
@@ -143,7 +143,7 @@ func TestDirection(t *testing.T) {
 
 func TestHexToDecimal(t *testing.T) {
 	hexValue := "0x24"
-	expected := 304
+	expected := int64(36)
 
 	result, err := hexToDecimal(hexValue)
 	assert.NoError(t, err)
@@ -152,8 +152,8 @@ func TestHexToDecimal(t *testing.T) {
 }
 
 func TestHexToByte(t *testing.T) {
-	hexValue := "0x24"
-	expected := 304
+	hexValue := "F"
+	expected := uint8(0xf)
 
 	result, err := hexToByte(hexValue)
 	assert.NoError(t, err)
@@ -163,7 +163,7 @@ func TestHexToByte(t *testing.T) {
 
 func TestHexToBinary(t *testing.T) {
 	hexValue := "F"
-	expected := 1111
+	expected := "1111"
 
 	result, err := hexToBinary(hexValue)
 	assert.NoError(t, err)

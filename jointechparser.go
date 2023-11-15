@@ -37,12 +37,12 @@ type ACLData struct {
 	UtimeMs  uint64    // Utime is Time in mili seconds
 	Utime    uint64    // Utime is Time in seconds
 	Priority uint8     // JT does not provide this value
-	Lat      int32     // Latitude (between 850000000 and -850000000), fit int32
-	Lng      int32     // Longitude (between 1800000000 and -1800000000), fit int32
+	Lat      float64   // Latitude (between 850000000 and -850000000), fit float64
+	Lng      float64   // Longitude (between 1800000000 and -1800000000), fit float64
 	Altitude int16     // JT does not provide this value
-	Angle    uint16    // Direction in degrees from the JT docs In degrees
+	Angle    float64   // Direction in degrees from the JT docs In degrees
 	VisSat   uint8     // The number of GPS satellites
-	Speed    uint16    // Speed in km/h
+	Speed    float64   // Speed in km/h
 	EventID  uint16    // JT does not provide this value
 	Elements []Element // Slice containing parsed Elements
 }
@@ -238,7 +238,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 			return Decoded{}, fmt.Errorf("Convert error, %v", err)
 		}
 
-		decodedData.Lat = int32(parsedLatInt32)
+		decodedData.Lat = float64(parsedLatInt32)
 
 		if !(decodedData.Lat > -850000000 && decodedData.Lat < 850000000) {
 			return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -850000000 AND lat < 850000000, got %v", decodedData.Lat)
@@ -255,7 +255,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 			return Decoded{}, fmt.Errorf("Convert error, %v", err)
 		}
 
-		decodedData.Lng = int32(parsedLngInt32)
+		decodedData.Lng = float64(parsedLngInt32)
 
 		if !(decodedData.Lng > -1800000000 && decodedData.Lng < 1800000000) {
 			return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -1800000000 AND lat < 1800000000, got %v", decodedData.Lng)
@@ -270,7 +270,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 			return Decoded{}, fmt.Errorf("Convert error, %v", err)
 		}
 
-		decodedData.Angle = uint16(parsedAngle)
+		decodedData.Angle = float64(parsedAngle)
 
 		if decodedData.Angle > 360 {
 			return Decoded{}, fmt.Errorf("Invalid Angle value, want Angle <= 360, got %v", decodedData.Angle)
@@ -290,7 +290,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 			return Decoded{}, fmt.Errorf("Convert error, %v", err)
 		}
 
-		decodedData.Speed = uint16(parsedSpeed)
+		decodedData.Speed = float64(parsedSpeed)
 
 		decoded.Data = append(decoded.Data, decodedData)
 		//decoded.Data[i] = decodedData

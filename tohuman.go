@@ -72,7 +72,7 @@ func (d *Decoded) toHumanRead() (string, error) {
 	//standardize angle/direction
 	angle, err := direction(strconv.Itoa(int(decodedData.Angle)))
 
-	decodedData.Angle = uint16(angle)
+	decodedData.Angle = angle
 
 	// Convert Decoded to JSON
 	jsonData, err := json.Marshal(d)
@@ -178,17 +178,17 @@ func decodeDirectionIndicator(value byte) (string, string, string, string) {
 	return fixedValue, longitude, latitude, positioning
 }
 
-func parseLatLng(latOrLng int) (int32, error) {
+func parseLatLng(latOrLng int) (float64, error) {
 	degrees := latOrLng / 1000000
 	minutes := (latOrLng % 1000000) / 10000
 	decimalMinutes := float64(latOrLng%10000) / 10000.0
 	final := float64(degrees) + (float64(minutes)+decimalMinutes)/60.0
 	scale := math.Pow(10, float64(6))
 	formatted := math.Round(final*scale) / scale
-	return int32(formatted), nil
+	return formatted, nil
 }
 
-func parseSpeed(value string) (uint16, error) {
+func parseSpeed(value string) (float64, error) {
 	decimalValue, err := strconv.ParseInt(value, 16, 64)
 	if err != nil {
 		_ = fmt.Errorf("converting error, %v", err)
@@ -198,7 +198,7 @@ func parseSpeed(value string) (uint16, error) {
 	scale := math.Pow(10, float64(6))
 	formatted := math.Round(speed*scale) / scale
 
-	return uint16(formatted), nil
+	return formatted, nil
 }
 
 func direction(value string) (float64, error) {
@@ -222,8 +222,8 @@ func hexToDecimal(hexString string) (int64, error) {
 	return decimalValue, nil
 }
 
+// Convert hex string to byte
 func hexToByte(hexString string) (byte, error) {
-	// Convert hex string to byte
 	var b byte
 	n, err := fmt.Sscanf(hexString, "%02x", &b)
 	if err != nil || n != 1 {
@@ -233,6 +233,7 @@ func hexToByte(hexString string) (byte, error) {
 	return b, nil
 }
 
+// Convert hex string to binary
 func hexToBinary(hexStr string) (string, error) {
 	hexStr = strings.TrimPrefix(hexStr, "0x")
 
