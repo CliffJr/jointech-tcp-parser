@@ -22,6 +22,7 @@ func (d *Decoded) toHumanReadable() (string, error) {
 	}
 
 	d.DataLength = dataLength
+
 	d.Date = parseDate(d.Date)
 
 	directionIndicator, err := hexToByte(d.DirectionIndicator)
@@ -48,9 +49,11 @@ func (d *Decoded) toHumanReadable() (string, error) {
 	for _, v := range d.Data {
 		decodedData := ACLData{}
 
-		//standardize date
+		//standardize time
+		decodedData.Utime = v.Utime
 
-		//standardize date
+		//standardize time ms
+		decodedData.UtimeMs = v.UtimeMs
 
 		//standardize lat
 		lat, err := parseLatLng(int(v.Lat))
