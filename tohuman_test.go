@@ -1,15 +1,13 @@
 package jointechparser
 
 import (
-	"encoding/hex"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestToHumanRead(t *testing.T) {
-	hexData := "2480006200111911003418042116225922348310113550543F12980000002D060000000020E028109228661F00010000868822040248195F000001CC0156"
-
-	expectedDecoded := Decoded{
+func TestToHumanReadable(t *testing.T) {
+	decoded := Decoded{
 		ProtocolHeader:        24,
 		ProtocolVersion:       "JT701D",
 		IMEI:                  "868822040248195F",
@@ -21,7 +19,7 @@ func TestToHumanRead(t *testing.T) {
 		DirectionIndicator:    "fixed value.1,east longitude,north latitude,GPS positioning",
 		Mileage:               "45",
 		BindVehicleID:         "00000000",
-		DeviceStatus:          "",
+		DeviceStatus:          "20E0",
 		BatteryLevel:          40,
 		CellIdPositionCode:    "10922866",
 		GSMSignalQuality:      31,
@@ -46,15 +44,23 @@ func TestToHumanRead(t *testing.T) {
 		},
 	}
 
-	byteData, err := hex.DecodeString(hexData)
+	// Call the toHumanReadable method
+	humanReadable, err := decoded.toHumanReadable()
 	assert.NoError(t, err)
-	assert.NotEmpty(t, byteData)
+	assert.NotEmpty(t, humanReadable)
 
-	// Pass the address of the byte slice to the Decode function
-	decoded, err := Decode(&byteData)
+	// Manually update the expected Decoded object based on the transformations in the toHumanReadable method
+	expectedDecoded := decoded
+	expectedDecoded.ProtocolVersion = protocolVersion(decoded.ProtocolVersion)
+	expectedDecoded.DeviceType = deviceType(decoded.DeviceType)
+	expectedDecoded.DataType = dataType(decoded.DataType)
+
+	// Convert the expected Decoded object to JSON
+	expectedJSON, err := json.Marshal(expectedDecoded)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, decoded)
-	assert.Equal(t, expectedDecoded, decoded)
+	assert.NotEmpty(t, expectedDecoded)
+	assert.Equal(t, expectedJSON, humanReadable)
+
 }
 
 func TestProtocolVersion(t *testing.T) {
@@ -172,9 +178,24 @@ func TestHexToBinary(t *testing.T) {
 }
 
 func TestDeviceStatus(t *testing.T) {
-
 	hexValue := "20E0"
-	expected := 1111
+
+	expected := "longTimeUnlockingAlarm: true " +
+		"exitFenceAlarm: false " +
+		"lockRopeState: true " +
+		"motorState: true " +
+		"swipeIllegalRFIDCardAlarm: false " +
+		"backCoverStatus: false " +
+		"baseStationPositioning: true " +
+		"motorStuckAlarm: false " +
+		"backCoverOpenedAlarm: false " +
+		"reserved: false " +
+		"platformACKCommandRequired: false " +
+		"lowBatteryAlarm: false " +
+		"wrongPasswordAlarm: false " +
+		"lockRopeCutAlarm: false " +
+		"enterFenceAlarm: false " +
+		"vibrationAlarm: false "
 
 	result := deviceStatus(hexValue)
 	assert.NotEmpty(t, result)

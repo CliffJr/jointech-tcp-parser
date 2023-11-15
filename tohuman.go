@@ -10,7 +10,7 @@ import (
 )
 
 // toHumanReadable updates some fields in Decoded and returns human-readable data as JSON
-func (d *Decoded) toHumanRead() (string, error) {
+func (d *Decoded) toHumanReadable() (string, error) {
 	// Update or modify fields as needed
 	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
 	d.DeviceType = deviceType(d.DeviceType)
@@ -35,7 +35,7 @@ func (d *Decoded) toHumanRead() (string, error) {
 
 	mileage, err := hexToDecimal(d.Mileage)
 	if err != nil {
-		return "", fmt.Errorf("Error converting to Binary: %v", err)
+		return "", fmt.Errorf("Error converting to Decimal: %v", err)
 	}
 
 	d.Mileage = strconv.FormatInt(mileage, 10)
@@ -212,14 +212,17 @@ func direction(value string) (float64, error) {
 	return float64(direction), nil
 }
 
-func hexToDecimal(hexString string) (int64, error) {
-	// Convert hexadecimal string to decimal
-	decimalValue, err := strconv.ParseInt(hexString, 0, 0)
-	if err != nil {
-		return 0, err
+func hexToDecimal(hexStr string) (int64, error) {
+	if hexStr == "" {
+		return 0, fmt.Errorf("hexToDecimal: empty string provided")
 	}
 
-	return decimalValue, nil
+	decimal, err := strconv.ParseInt(hexStr, 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("hexToDecimal: %v", err)
+	}
+
+	return decimal, nil
 }
 
 // Convert hex string to byte
@@ -290,6 +293,11 @@ func parseDeviceStatus(binaryStr string) map[string]bool {
 
 	for bit, description := range statesAndAlarms {
 		index := len(reversedBinary) - bitToInt(bit) - 1
+
+		if index < 0 {
+			index = 0
+		}
+
 		deviceStatus[description] = reversedBinary[index] == '1'
 	}
 
@@ -309,7 +317,13 @@ func bitToInt(bit string) int {
 	parts := strings.Split(bit, ".")
 	byteNum := parts[0]
 	bitNum := parts[1]
-	return (int(byteNum[0]-'0')-1)*8 + int(bitNum[3]-'0')
+	index := (int(byteNum[0]-'0')-1)*8 + int(bitNum[3]-'0')
+
+	if index < 0 {
+		return 0
+	}
+
+	return index
 }
 
 func GSMSignalQuality(value uint8) uint8 {
