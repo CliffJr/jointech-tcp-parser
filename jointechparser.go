@@ -56,9 +56,8 @@ type Element struct {
 
 // DeviceStates - various states and alarms of the device
 type DeviceStates struct {
-	Name        string
-	Value       bool
-	Description string
+	Name  string `json:"name"`
+	Value bool   `json:"value"`
 }
 
 // Decode takes a pointer to a slice of bytes with raw data and return Decoded struct

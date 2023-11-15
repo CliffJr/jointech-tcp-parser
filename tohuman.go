@@ -265,9 +265,20 @@ func deviceStatus(value string) string {
 
 	deviceStatus := parseDeviceStatus(binaryStr)
 
-	result := ""
+	var result string
+
 	for state, value := range deviceStatus {
-		result += fmt.Sprintf("%s: %v\n", state, value)
+		deviceStates := DeviceStates{
+			Name:  state,
+			Value: value,
+		}
+
+		deviceStatesJSON, err := json.Marshal(deviceStates)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+
+		result += string(deviceStatesJSON) + "\n"
 	}
 
 	return result
