@@ -55,6 +55,9 @@ func (d *Decoded) toHumanReadable() (string, error) {
 		//standardize time ms
 		decodedData.UtimeMs = v.UtimeMs
 
+		//standardize no of the satellites
+		decodedData.VisSat = v.VisSat
+
 		//standardize lat
 		lat, err := parseLatLng(int(v.Lat))
 		if err != nil {
@@ -148,12 +151,12 @@ func parseDate(dateString string) string {
 	layout := "020106" // DDMMYY layout
 
 	// Parse the date string
-	parsedTime, err := time.Parse(layout, dateString)
+	parsedDate, err := time.Parse(layout, dateString)
 	if err != nil {
 		_ = fmt.Errorf("converting error, %v", err)
 	}
 
-	utcTime := parsedTime.String()
+	utcTime := parsedDate.String()
 	return utcTime
 }
 

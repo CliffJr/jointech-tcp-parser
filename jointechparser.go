@@ -202,10 +202,10 @@ func Decode(bs *[]byte) (Decoded, error) {
 	}
 
 	// make slice for decoded data
-	decoded.Data = make([]ACLData, 0, len(decoded.DataLength))
+	decoded.Data = make([]ACLData, 0, 7)
 
 	// go through data
-	for i := 0; i < len(decoded.DataLength); i++ {
+	for i := 0; i < 1; i++ {
 
 		decodedData := ACLData{}
 
