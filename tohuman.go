@@ -1,7 +1,6 @@
 package jointechparser
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 )
 
 // toHumanReadable updates some fields in Decoded and returns human-readable data as JSON
-func (d *Decoded) toHumanReadable() (string, error) {
+func (d *Decoded) toHumanReadable() (Decoded, error) {
 	// Update or modify fields as needed
 	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
 	d.DeviceType = deviceType(d.DeviceType)
@@ -18,7 +17,7 @@ func (d *Decoded) toHumanReadable() (string, error) {
 
 	dataLength, err := hexToBinary(d.DataLength)
 	if err != nil {
-		return "", fmt.Errorf("Error converting to Binary: %v", err)
+		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
 	}
 
 	d.DataLength = dataLength
@@ -27,7 +26,7 @@ func (d *Decoded) toHumanReadable() (string, error) {
 
 	directionIndicator, err := hexToByte(d.DirectionIndicator)
 	if err != nil {
-		return "", fmt.Errorf("Error converting to Binary: %v", err)
+		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
 	}
 
 	fixedValue, longitude, latitude, positioning := decodeDirectionIndicator(directionIndicator)
@@ -36,65 +35,57 @@ func (d *Decoded) toHumanReadable() (string, error) {
 
 	mileage, err := hexToDecimal(d.Mileage)
 	if err != nil {
-		return "", fmt.Errorf("Error converting to Decimal: %v", err)
+		return Decoded{}, fmt.Errorf("Error converting to Decimal: %v", err)
 	}
 
 	d.Mileage = strconv.FormatInt(mileage, 10)
 
-	d.DeviceStatus = deviceStatus(d.DeviceStatus)
+	deviceStatusParser := d.DeviceStatusParser
+
+	d.DeviceStatus = deviceStatus(deviceStatusParser)
 
 	d.GSMSignalQuality = GSMSignalQuality(d.GSMSignalQuality)
 
-	// go through data
-	for _, v := range d.Data {
-		decodedData := ACLData{}
+	//instance of ACLData
+	decodedData := ACLData{}
 
-		//standardize time
-		decodedData.Utime = v.Utime
+	//standardize time
+	decodedData.Utime = d.Data.UtimeMs
 
-		//standardize time ms
-		decodedData.UtimeMs = v.UtimeMs
+	//standardize time ms
+	decodedData.UtimeMs = d.Data.UtimeMs
 
-		//standardize no of the satellites
-		decodedData.VisSat = v.VisSat
+	//standardize no of the satellites
+	decodedData.VisSat = d.Data.VisSat
 
-		//standardize lat
-		lat, err := parseLatLng(int(v.Lat))
-		if err != nil {
-			return "", fmt.Errorf("Error converting to Binary: %v", err)
-		}
-
-		decodedData.Lat = lat
-
-		//standardize lng
-		lng, err := parseLatLng(int(v.Lng))
-		if err != nil {
-			return "", fmt.Errorf("Error converting to Binary: %v", err)
-		}
-
-		decodedData.Lng = lng
-
-		//standardize speed
-		speed, err := parseSpeed(strconv.Itoa(int(v.Speed)))
-		decodedData.Speed = speed
-
-		//standardize angle/direction
-		angle, err := direction(strconv.Itoa(int(v.Angle)))
-
-		decodedData.Angle = angle
-
-		d.Data = append(d.Data, decodedData)
-
-	}
-
-	// Convert Decoded to JSON
-	jsonData, err := json.Marshal(d)
+	//standardize lat
+	lat, err := parseLatLng(int(d.Data.Lat))
 	if err != nil {
-		return "", fmt.Errorf("Error marshalling to JSON: %v", err)
+		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
 	}
 
-	// Return the JSON string
-	return string(jsonData), nil
+	decodedData.Lat = lat
+
+	//standardize lng
+	lng, err := parseLatLng(int(d.Data.Lng))
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
+	}
+
+	decodedData.Lng = lng
+
+	//standardize speed
+	speed, err := parseSpeed(strconv.Itoa(int(d.Data.Speed)))
+	decodedData.Speed = speed
+
+	//standardize angle/direction
+	angle, err := direction(strconv.Itoa(int(d.Data.Angle)))
+
+	decodedData.Angle = int32(angle)
+
+	d.Data = decodedData
+
+	return *d, nil
 }
 
 func protocolVersion(value string) string {
@@ -263,7 +254,7 @@ func hexToBinary(hexStr string) (string, error) {
 	return binaryStr, nil
 }
 
-func deviceStatus(value string) string {
+func deviceStatus(value string) DeviceStatuses {
 	binaryStr, err := hexToBinary(value)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -271,20 +262,43 @@ func deviceStatus(value string) string {
 
 	deviceStatus := parseDeviceStatus(binaryStr)
 
-	var result string
+	var result DeviceStatuses
 
 	for state, value := range deviceStatus {
-		deviceStates := DeviceStates{
-			Name:  state,
-			Value: value,
+		switch state {
+		case "baseStationPositioning":
+			result.baseStationPositioning = value
+		case "enterFenceAlarm":
+			result.enterFenceAlarm = value
+		case "exitFenceAlarm":
+			result.exitFenceAlarm = value
+		case "lockRopeCutAlarm":
+			result.lockRopeCutAlarm = value
+		case "vibrationAlarm":
+			result.vibrationAlarm = value
+		case "platformACKCommandRequired":
+			result.platformACKCommandRequired = value
+		case "lockRopeState":
+			result.lockRopeState = value
+		case "motorState":
+			result.motorState = value
+		case "longTimeUnlockingAlarm":
+			result.longTimeUnlockingAlarm = value
+		case "wrongPasswordAlarm":
+			result.wrongPasswordAlarm = value
+		case "swipeIllegalRFIDCardAlarm":
+			result.swipeIllegalRFIDCardAlarm = value
+		case "lowBatteryAlarm":
+			result.lowBatteryAlarm = value
+		case "backCoverOpenedAlarm":
+			result.backCoverOpenedAlarm = value
+		case "backCoverStatus":
+			result.backCoverStatus = value
+		case "motorStuckAlarm":
+			result.motorStuckAlarm = value
+		case "reserved":
+			result.reserved = value
 		}
-
-		deviceStatesJSON, err := json.Marshal(deviceStates)
-		if err != nil {
-			fmt.Println("Error:", err)
-		}
-
-		result += string(deviceStatesJSON) + "\n"
 	}
 
 	return result

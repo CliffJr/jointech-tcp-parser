@@ -1,25 +1,43 @@
 package jointechparser
 
 import (
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestToHumanReadable(t *testing.T) {
 	decoded := Decoded{
-		ProtocolHeader:        24,
-		ProtocolVersion:       "JT701D",
-		IMEI:                  "868822040248195F",
-		TerminalID:            "8000620011",
-		Date:                  "2006-01-02 00:00:00 +0000 UTC",
-		DeviceType:            "Regular rechargeable JT701",
-		DataType:              "Real-time position data",
-		DataLength:            "52",
-		DirectionIndicator:    "fixed value.1,east longitude,north latitude,GPS positioning",
-		Mileage:               "45",
-		BindVehicleID:         "00000000",
-		DeviceStatus:          "20E0",
+		ProtocolHeader:     "24",
+		ProtocolVersion:    "JT701D",
+		IMEI:               "868822040248195F",
+		TerminalID:         "8000620011",
+		Date:               "2006-01-02 00:00:00 +0000 UTC",
+		DeviceType:         "Regular rechargeable JT701",
+		DataType:           "Real-time position data",
+		DataLength:         "52",
+		DirectionIndicator: "fixed value.1,east longitude,north latitude,GPS positioning",
+		Mileage:            "0000002D",
+		BindVehicleID:      "00000000",
+		DeviceStatusParser: "20E0",
+		DeviceStatus: DeviceStatuses{
+			baseStationPositioning:     true,
+			enterFenceAlarm:            false,
+			exitFenceAlarm:             false,
+			lockRopeCutAlarm:           false,
+			vibrationAlarm:             false,
+			platformACKCommandRequired: false,
+			lockRopeState:              true,
+			motorState:                 true,
+			longTimeUnlockingAlarm:     true,
+			wrongPasswordAlarm:         false,
+			swipeIllegalRFIDCardAlarm:  false,
+			lowBatteryAlarm:            false,
+			backCoverOpenedAlarm:       false,
+			backCoverStatus:            false,
+			motorStuckAlarm:            false,
+			reserved:                   false,
+		},
+
 		BatteryLevel:          40,
 		CellIdPositionCode:    "10922866",
 		GSMSignalQuality:      31,
@@ -29,18 +47,16 @@ func TestToHumanReadable(t *testing.T) {
 		ExpandedDeviceStatus2: 01,
 		DataSerialNo:          86,
 
-		Data: []ACLData{
-			{
-				UtimeMs:  162259,
-				Utime:    162259,
-				Priority: 0,
-				Lat:      22348310,
-				Lng:      113550543,
-				Altitude: 0,
-				Angle:    98,
-				VisSat:   06,
-				Speed:    12,
-			},
+		Data: ACLData{
+			UtimeMs:  162259,
+			Utime:    162259,
+			Priority: 0,
+			Lat:      22348310,
+			Lng:      113550543,
+			Altitude: 0,
+			Angle:    98,
+			VisSat:   06,
+			Speed:    12,
 		},
 	}
 
@@ -51,11 +67,9 @@ func TestToHumanReadable(t *testing.T) {
 
 	expectedDecoded := decoded
 
-	// Convert the expected Decoded object to JSON
-	expectedJSON, err := json.Marshal(expectedDecoded)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, expectedDecoded)
-	assert.Equal(t, expectedJSON, humanReadable)
+	assert.Equal(t, expectedDecoded, humanReadable)
 
 }
 

@@ -9,7 +9,7 @@ import (
 
 // Decoded struct represent decoded E-Lock JointTech data structure with all ACL(Automated Container Lock) data as return from function Decode
 type Decoded struct {
-	ProtocolHeader        uint8
+	ProtocolHeader        string
 	ProtocolVersion       string
 	IMEI                  string
 	TerminalID            string
@@ -20,7 +20,8 @@ type Decoded struct {
 	DirectionIndicator    string
 	Mileage               string
 	BindVehicleID         string
-	DeviceStatus          string
+	DeviceStatusParser    string
+	DeviceStatus          DeviceStatuses
 	BatteryLevel          uint8
 	CellIdPositionCode    string
 	GSMSignalQuality      uint8
@@ -29,7 +30,7 @@ type Decoded struct {
 	ExpandedDeviceStatus  uint8
 	ExpandedDeviceStatus2 uint8
 	DataSerialNo          uint8
-	Data                  []ACLData // Slice with ACL data
+	Data                  ACLData // Slice with ACL data
 }
 
 // ACLData represent one block of data
@@ -40,7 +41,7 @@ type ACLData struct {
 	Lat      float64   // Latitude (between 850000000 and -850000000), fit float64
 	Lng      float64   // Longitude (between 1800000000 and -1800000000), fit float64
 	Altitude int16     // JT does not provide this value
-	Angle    float64   // Direction in degrees from the JT docs In degrees
+	Angle    int32     // Direction in degrees from the JT docs In degrees
 	VisSat   uint8     // The number of GPS satellites
 	Speed    float64   // Speed in km/h
 	EventID  uint16    // JT does not provide this value
@@ -58,6 +59,25 @@ type Element struct {
 type DeviceStates struct {
 	Name  string `json:"name"`
 	Value bool   `json:"value"`
+}
+
+type DeviceStatuses struct {
+	baseStationPositioning     bool
+	enterFenceAlarm            bool
+	exitFenceAlarm             bool
+	lockRopeCutAlarm           bool
+	vibrationAlarm             bool
+	platformACKCommandRequired bool
+	lockRopeState              bool
+	motorState                 bool
+	longTimeUnlockingAlarm     bool
+	wrongPasswordAlarm         bool
+	swipeIllegalRFIDCardAlarm  bool
+	lowBatteryAlarm            bool
+	backCoverOpenedAlarm       bool
+	backCoverStatus            bool
+	motorStuckAlarm            bool
+	reserved                   bool
 }
 
 // Decode takes a pointer to a slice of bytes with raw data and return Decoded struct
@@ -82,10 +102,12 @@ func Decode(bs *[]byte) (Decoded, error) {
 	}
 
 	// determine protocol header in packet
-	decoded.ProtocolHeader, err = b2n.ParseBs2Uint8(bs, 0)
+	decodedProtocolHeader, err := b2n.ParseBs2Uint8(bs, 0)
 	if err != nil {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
+
+	decoded.ProtocolHeader = strconv.Itoa(int(decodedProtocolHeader))
 
 	decoded.TerminalID, err = b2n.ParseBs2String(bs, 1, 5)
 	if err != nil {
@@ -153,11 +175,17 @@ func Decode(bs *[]byte) (Decoded, error) {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
 
-	// determine device status in packet
-	decoded.DeviceStatus, err = b2n.ParseBs2String(bs, 36, 2)
+	// just a parser to determine device status in packet
+	decodedDeviceStatus, err := b2n.ParseBs2String(bs, 36, 2)
 	if err != nil {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
+
+	decoded.DeviceStatusParser = decodedDeviceStatus
+
+	//just initialize for a now
+	deviceStatuses := DeviceStatuses{}
+	decoded.DeviceStatus = deviceStatuses
 
 	// determine battery level in packet
 	decoded.BatteryLevel, err = b2n.ParseBs2Uint8(bs, 38)
@@ -201,98 +229,92 @@ func Decode(bs *[]byte) (Decoded, error) {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
 
-	// make slice for decoded data
-	decoded.Data = make([]ACLData, 0, 7)
+	// make an instance for decoded data
+	decodedData := ACLData{}
 
-	// go through data
-	for i := 0; i < 1; i++ {
-
-		decodedData := ACLData{}
-
-		// time record in ms has 8 Bytes
-		parsedTime, err := b2n.ParseBs2String(bs, 13, 3)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
-		}
-
-		// Convert string to uint64
-		parsedTimeUint64, err := strconv.ParseUint(parsedTime, 10, 64)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert uint64 error, %v", err)
-		}
-
-		decodedData.UtimeMs = parsedTimeUint64
-
-		decodedData.Utime = uint64(decodedData.UtimeMs / 1000)
-
-		// parse priority will be nil because JT does not provide that value
-		decodedData.Priority = 0
-
-		// parse lat and validate GPS
-		parsedLat, err := b2n.ParseBs2String(bs, 16, 4)
-
-		// Convert string to uint32
-		parsedLatInt32, err := strconv.ParseUint(parsedLat, 10, 64)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
-		}
-
-		decodedData.Lat = float64(parsedLatInt32)
-
-		if !(decodedData.Lat > -850000000 && decodedData.Lat < 850000000) {
-			return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -850000000 AND lat < 850000000, got %v", decodedData.Lat)
-		}
-
-		// parse Lng and validate GPS
-		parsedLng, err := b2n.ParseBs2String(bs, 20, 5)
-
-		cleanedLng, err := cleanLng(parsedLng)
-
-		// Convert string to uint32
-		parsedLngInt32, err := strconv.ParseUint(cleanedLng, 10, 64)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
-		}
-
-		decodedData.Lng = float64(parsedLngInt32)
-
-		if !(decodedData.Lng > -1800000000 && decodedData.Lng < 1800000000) {
-			return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -1800000000 AND lat < 1800000000, got %v", decodedData.Lng)
-		}
-
-		// JT does not provide the Altitude
-		decodedData.Altitude = 0
-
-		// parse Angle
-		parsedAngle, err := b2n.ParseBs2Int32TwoComplement(bs, 26)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
-		}
-
-		decodedData.Angle = float64(parsedAngle)
-
-		if decodedData.Angle > 360 {
-			return Decoded{}, fmt.Errorf("Invalid Angle value, want Angle <= 360, got %v", decodedData.Angle)
-		}
-
-		// parse num. of visible satellites VisSat
-		parsedSatellites, err := b2n.ParseBs2Uint8(bs, 31)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
-		}
-
-		decodedData.VisSat = uint8(parsedSatellites)
-
-		// parse Speed
-		parsedSpeed, err := b2n.ParseBs2Uint8(bs, 6)
-		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
-		}
-
-		decodedData.Speed = float64(parsedSpeed)
-
-		decoded.Data = append(decoded.Data, decodedData)
+	// time record in ms has 8 Bytes
+	parsedTime, err := b2n.ParseBs2String(bs, 13, 3)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}
+
+	// Convert string to uint64
+	parsedTimeUint64, err := strconv.ParseUint(parsedTime, 10, 64)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert uint64 error, %v", err)
+	}
+
+	decodedData.UtimeMs = parsedTimeUint64
+
+	decodedData.Utime = uint64(decodedData.UtimeMs / 1000)
+
+	// parse priority will be nil because JT does not provide that value
+	decodedData.Priority = 0
+
+	// parse lat and validate GPS
+	parsedLat, err := b2n.ParseBs2String(bs, 16, 4)
+
+	// Convert string to uint32
+	parsedLatInt32, err := strconv.ParseUint(parsedLat, 10, 64)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert error, %v", err)
+	}
+
+	decodedData.Lat = float64(parsedLatInt32)
+
+	if !(decodedData.Lat > -850000000 && decodedData.Lat < 850000000) {
+		return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -850000000 AND lat < 850000000, got %v", decodedData.Lat)
+	}
+
+	// parse Lng and validate GPS
+	parsedLng, err := b2n.ParseBs2String(bs, 20, 5)
+
+	cleanedLng, err := cleanLng(parsedLng)
+
+	// Convert string to uint32
+	parsedLngInt32, err := strconv.ParseUint(cleanedLng, 10, 64)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert error, %v", err)
+	}
+
+	decodedData.Lng = float64(parsedLngInt32)
+
+	if !(decodedData.Lng > -1800000000 && decodedData.Lng < 1800000000) {
+		return Decoded{}, fmt.Errorf("Invalid Lat value, want lat > -1800000000 AND lat < 1800000000, got %v", decodedData.Lng)
+	}
+
+	// JT does not provide the Altitude
+	decodedData.Altitude = 0
+
+	// parse Angle
+	parsedAngle, err := b2n.ParseBs2Int32TwoComplement(bs, 26)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert error, %v", err)
+	}
+
+	decodedData.Angle = parsedAngle
+
+	if decodedData.Angle > 360 {
+		return Decoded{}, fmt.Errorf("Invalid Angle value, want Angle <= 360, got %v", decodedData.Angle)
+	}
+
+	// parse num. of visible satellites VisSat
+	parsedSatellites, err := b2n.ParseBs2Uint8(bs, 31)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert error, %v", err)
+	}
+
+	decodedData.VisSat = uint8(parsedSatellites)
+
+	// parse Speed
+	parsedSpeed, err := b2n.ParseBs2Uint8(bs, 6)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Convert error, %v", err)
+	}
+
+	decodedData.Speed = float64(parsedSpeed)
+
+	decoded.Data = decodedData
 
 	return decoded, nil
 }
