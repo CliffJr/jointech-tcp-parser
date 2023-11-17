@@ -1,4 +1,4 @@
-module jointech_tcp_parser
+module jointech-tcp-parser
 
 go 1.21.0
 
