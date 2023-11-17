@@ -6,14 +6,13 @@ import (
 	"strings"
 )
 
-func packetReception(rawData string) string {
+func PacketReception(rawData string) ([]string, error) {
 	// Split the raw data into packets using 0x24 as a delimiter
 	packets := strings.Split(rawData, "24")
 
 	// Process each packet
-	var processedData []string
+	var result []string
 	for _, packet := range packets {
-		// Trim leading and trailing spaces
 		packet = strings.TrimSpace(packet)
 
 		// Remove spaces between hex values
@@ -21,23 +20,14 @@ func packetReception(rawData string) string {
 
 		// Check if the packet is not empty
 		if packet != "" {
-			// Convert hex string to bytes
-			bytes, err := hex.DecodeString(packet)
+			_, err := hex.DecodeString(packet)
 			if err != nil {
-				fmt.Println("Error decoding hex:", err)
-				continue
+				return nil, fmt.Errorf("error decoding hex: %v", err)
 			}
 
-			for _, b := range bytes {
-				fmt.Printf("%02X ", b)
-			}
-			fmt.Println()
-
-			processedData = append(processedData, fmt.Sprintf("%02X", bytes))
+			result = append(result, packet)
 		}
 	}
 
-	result := strings.Join(processedData, "\n")
-
-	return result
+	return result, nil
 }
