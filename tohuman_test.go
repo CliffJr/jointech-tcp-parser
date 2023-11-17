@@ -12,6 +12,7 @@ func TestToHumanReadable(t *testing.T) {
 		IMEI:               "868822040248195F",
 		TerminalID:         "8000620011",
 		Date:               "180421",
+		Time:               "162259",
 		DeviceType:         "1",
 		DataType:           "1",
 		DataLength:         "52",
@@ -74,7 +75,7 @@ func TestToHumanReadable(t *testing.T) {
 }
 
 func TestProtocolVersion(t *testing.T) {
-	hexValue := "98"
+	hexValue := "19"
 	expected := "JT701D"
 
 	result := protocolVersion(hexValue)
@@ -93,7 +94,7 @@ func TestDeviceType(t *testing.T) {
 
 func TestDataType(t *testing.T) {
 	hexValue := "1"
-	expected := "Unknown data type"
+	expected := "Real-time position data"
 
 	result := dataType(hexValue)
 	assert.NotEmpty(t, result)
@@ -158,7 +159,7 @@ func TestDirection(t *testing.T) {
 }
 
 func TestHexToDecimal(t *testing.T) {
-	hexValue := "0x24"
+	hexValue := "24"
 	expected := int64(36)
 
 	result, err := hexToDecimal(hexValue)
@@ -190,22 +191,7 @@ func TestHexToBinary(t *testing.T) {
 func TestDeviceStatus(t *testing.T) {
 	hexValue := "20E0"
 
-	expected := "longTimeUnlockingAlarm: true " +
-		"exitFenceAlarm: false " +
-		"lockRopeState: true " +
-		"motorState: true " +
-		"swipeIllegalRFIDCardAlarm: false " +
-		"backCoverStatus: false " +
-		"baseStationPositioning: true " +
-		"motorStuckAlarm: false " +
-		"backCoverOpenedAlarm: false " +
-		"reserved: false " +
-		"platformACKCommandRequired: false " +
-		"lowBatteryAlarm: false " +
-		"wrongPasswordAlarm: false " +
-		"lockRopeCutAlarm: false " +
-		"enterFenceAlarm: false " +
-		"vibrationAlarm: false "
+	expected := DeviceStatuses{baseStationPositioning: true, enterFenceAlarm: false, exitFenceAlarm: false, lockRopeCutAlarm: false, vibrationAlarm: false, platformACKCommandRequired: false, lockRopeState: true, motorState: true, longTimeUnlockingAlarm: true, wrongPasswordAlarm: false, swipeIllegalRFIDCardAlarm: false, lowBatteryAlarm: false, backCoverOpenedAlarm: false, backCoverStatus: false, motorStuckAlarm: false, reserved: false}
 
 	result := deviceStatus(hexValue)
 	assert.NotEmpty(t, result)

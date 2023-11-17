@@ -15,6 +15,7 @@ func TestDecode(t *testing.T) {
 		IMEI:               "868822040248195F",
 		TerminalID:         "8000620011",
 		Date:               "180421",
+		Time:               "162259",
 		DeviceType:         "17",
 		DataType:           "17",
 		DataLength:         "0034",
