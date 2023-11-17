@@ -1,4 +1,4 @@
-module jointech-tcp-parser
+module github.com/CliffJr/jointech-tcp-parser
 
 go 1.21.0
 
