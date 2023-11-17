@@ -14,18 +14,15 @@ func PacketReception(rawData string) ([]string, error) {
 	var result []string
 	for _, packet := range packets {
 		packet = strings.TrimSpace(packet)
-
-		// Remove spaces between hex values
 		packet = strings.ReplaceAll(packet, " ", "")
 
-		// Check if the packet is not empty
 		if packet != "" {
 			_, err := hex.DecodeString(packet)
 			if err != nil {
 				return nil, fmt.Errorf("error decoding hex: %v", err)
 			}
 
-			result = append(result, packet)
+			result = append(result, "24"+packet)
 		}
 	}
 
