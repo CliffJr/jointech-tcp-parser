@@ -14,15 +14,8 @@ func (d *Decoded) toHumanReadable() (Decoded, error) {
 	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
 	d.DeviceType = deviceType(d.DeviceType)
 	d.DataType = dataType(d.DataType)
-
-	dataLength, err := hexToBinary(d.DataLength)
-	if err != nil {
-		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
-	}
-
-	d.DataLength = dataLength
-
 	d.Date = parseDate(d.Date)
+	d.Time = parseTime(d.Time)
 
 	directionIndicator, err := hexToByte(d.DirectionIndicator)
 	if err != nil {
@@ -50,10 +43,10 @@ func (d *Decoded) toHumanReadable() (Decoded, error) {
 	decodedData := ACLData{}
 
 	//standardize time
-	decodedData.Utime = d.Data.UtimeMs
+	decodedData.UtimeMs = toSeconds(d.Time)
 
 	//standardize time ms
-	decodedData.UtimeMs = d.Data.UtimeMs
+	decodedData.Utime = toMilliseconds(d.Time)
 
 	//standardize no of the satellites
 	decodedData.VisSat = d.Data.VisSat
@@ -134,7 +127,7 @@ func dataType(value string) string {
 	case 4:
 		return "Sub-new position data (newly added by JT701D)"
 	default:
-		return "Unknown data type"
+		return "Real-time position data"
 	}
 }
 
@@ -369,4 +362,44 @@ func GSMSignalQuality(value uint8) uint8 {
 		return 99
 	}
 	return value
+}
+
+func parseTime(value string) string {
+	seconds, err := strconv.ParseInt(value, 16, 32)
+	if err != nil {
+		_ = fmt.Errorf("converting error, %v", err)
+	}
+
+	duration := time.Duration(seconds) * time.Second
+	utcTime := time.Now().UTC()
+	resultTime := utcTime.Add(duration)
+
+	// Format the time as "hh:mm:ss"
+	resultFormatted := resultTime.Format("15:04:05")
+
+	return resultFormatted
+}
+
+func toMilliseconds(timeString string) uint64 {
+	parsedTime, err := time.Parse("15:04:05", timeString)
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return 0
+	}
+
+	milliseconds := parsedTime.UnixNano() / int64(time.Millisecond)
+
+	return uint64(milliseconds)
+}
+
+func toSeconds(timeString string) uint64 {
+	parsedTime, err := time.Parse("15:04:05", timeString)
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return 0
+	}
+
+	seconds := parsedTime.Unix()
+
+	return uint64(seconds)
 }

@@ -14,6 +14,7 @@ type Decoded struct {
 	IMEI                  string
 	TerminalID            string
 	Date                  string
+	Time                  string
 	DeviceType            string
 	DataType              string
 	DataLength            string
@@ -146,6 +147,12 @@ func Decode(bs *[]byte) (Decoded, error) {
 
 	// determine date in packet
 	decoded.Date, err = b2n.ParseBs2String(bs, 10, 3)
+	if err != nil {
+		return Decoded{}, fmt.Errorf("Decode error, %v", err)
+	}
+
+	// determine time in packet
+	decoded.Time, err = b2n.ParseBs2String(bs, 13, 3)
 	if err != nil {
 		return Decoded{}, fmt.Errorf("Decode error, %v", err)
 	}

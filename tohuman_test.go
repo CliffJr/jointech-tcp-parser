@@ -8,12 +8,12 @@ import (
 func TestToHumanReadable(t *testing.T) {
 	decoded := Decoded{
 		ProtocolHeader:     "24",
-		ProtocolVersion:    "JT701D",
+		ProtocolVersion:    "19",
 		IMEI:               "868822040248195F",
 		TerminalID:         "8000620011",
-		Date:               "2006-01-02 00:00:00 +0000 UTC",
-		DeviceType:         "Regular rechargeable JT701",
-		DataType:           "Real-time position data",
+		Date:               "180421",
+		DeviceType:         "1",
+		DataType:           "1",
 		DataLength:         "52",
 		DirectionIndicator: "fixed value.1,east longitude,north latitude,GPS positioning",
 		Mileage:            "0000002D",
