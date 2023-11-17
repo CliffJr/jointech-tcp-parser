@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// PacketReception TODO: Clean the packet by removing unnecessary clubbed information in future
 func PacketReception(rawData string) ([]string, error) {
 	// Split the raw data into packets using 0x24 as a delimiter
 	packets := strings.Split(rawData, "24")
