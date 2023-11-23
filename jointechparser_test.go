@@ -2,8 +2,9 @@ package jointechparser
 
 import (
 	"encoding/hex"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDecode(t *testing.T) {
@@ -73,5 +74,19 @@ func TestDecode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, decoded)
 	assert.Equal(t, expectedDecoded, decoded)
+
+}
+
+func TestDecodeHealthcheck(t *testing.T) {
+	hexData := "28373030303331333333342C404A5429"
+
+	byteData, err := hex.DecodeString(hexData)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, byteData)
+
+	// Pass the address of the byte slice to the Decode function
+	decoded, err := Decode(&byteData)
+	assert.Error(t, err)
+	assert.Empty(t, decoded)
 
 }
