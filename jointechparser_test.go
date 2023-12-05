@@ -111,6 +111,9 @@ func TestDecodeSingleRecord(t *testing.T) {
 	assert.False(t, decoded.Data[0].HasHighEvent(CoverOpen))
 	assert.True(t, decoded.Data[0].HasLowEvent(MotorLocked))
 	assert.True(t, decoded.Data[0].HasLowEvent(RopeInserted))
+	assert.True(t, decoded.Data[0].HasLowEvent(AckRequired))
+	assert.False(t, decoded.Data[0].HasLowEvent(BaseStationPositioning))
+	assert.False(t, decoded.Data[0].HasLowEvent(Vibration))
 	//dec = 10342 hex = 0x2866
 	var expLAC uint16 = 10342
 	assert.Equal(t, expLAC, decoded.Data[0].LAC())
