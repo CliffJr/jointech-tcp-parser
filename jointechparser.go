@@ -60,33 +60,31 @@ const (
 
 // PALData represent a package of positional or alarm data recieved by a JT701D smart lock
 type PALData struct {
-	UtimeMs               uint64  // Utime is Time in mili seconds
-	Utime                 uint64  // Utime is Time in seconds
-	Priority              uint8   // JT does not provide this value
-	Lat                   float64 // Latitude (between 850000000 and -850000000), fits float64
-	Lng                   float64 // Longitude (between 1800000000 and -1800000000), fits float64
-	Angle                 int32   // Direction in degrees from the JT docs In degrees
-	Distance              uint32  // Distance lock travelled in km (spec refers it as "Mileage")
-	VisSat                uint8   // The number of GPS satellites
-	Speed                 float64 // Speed in km/h
-	DirectionIndicator    string  // Positioning - East/West longitude or North/South latitude
-	Date                  string  // Package Date in DDMMYY format
-	Time                  string  // Package Time in hh:mm:ss format
-	DeviceStatusParser    string
-	DeviceStatus          DeviceStatuses
-	BatteryLevel          uint8  // Percentage of available battery level
-	CellIdPositionCode    uint32 // Most signifficant 2 bytes for Cell ID are stored first and lower 2 bytes for Pos code come next
-	Mcc                   uint16 // Country code
-	GSMSignalQuality      uint8  // a byte representing GSM signal strength (99 is for no signal detection)
-	FenceAlarmID          uint8  // entry and exit fence aleam ID (10 fences are supported)
-	MNCHighByte           uint8  // Higher byte part of mobile operator code
-	MNCLowByte            uint8  // Lower byte part of mobile operator code
-	ExpandedDeviceStatus  uint8  // Contains wake up source with possible values from 0-10. Check page 15 of J701D Protocol Manual PDF for more details
-	ExpandedDeviceStatus2 uint8  // For now holds info for battery charging status. Expected that JoinTech will place more status info in the future.
-	SerialNo              uint8  // Sequence number of positional or alarm data recieved
-	Length                uint16 // The data length from the date field to the data serial number in bytes
-	HighEvents            *HighByteLockEvent
-	LowEvents             *LowByteLockEvent
+	UtimeMs               uint64             // Utime is Time in mili seconds
+	Utime                 uint64             // Utime is Time in seconds
+	Priority              uint8              // JT does not provide this value
+	Lat                   float64            // Latitude (between 850000000 and -850000000), fits float64
+	Lng                   float64            // Longitude (between 1800000000 and -1800000000), fits float64
+	Angle                 int32              // Direction in degrees from the JT docs In degrees
+	Distance              uint32             // Distance lock travelled in km (spec refers it as "Mileage")
+	VisSat                uint8              // The number of GPS satellites
+	Speed                 float64            // Speed in km/h
+	DirectionIndicator    string             // Positioning - East/West longitude or North/South latitude
+	Date                  string             // Package Date in DDMMYY format
+	Time                  string             // Package Time in hh:mm:ss format
+	BatteryLevel          uint8              // Percentage of available battery level
+	CellIdPositionCode    uint32             // Most signifficant 2 bytes for Cell ID are stored first and lower 2 bytes for Pos code come next
+	Mcc                   uint16             // Country code
+	GSMSignalQuality      uint8              // a byte representing GSM signal strength (99 is for no signal detection)
+	FenceAlarmID          uint8              // entry and exit fence aleam ID (10 fences are supported)
+	MNCHighByte           uint8              // Higher byte part of mobile operator code
+	MNCLowByte            uint8              // Lower byte part of mobile operator code
+	ExpandedDeviceStatus  uint8              // Contains wake up source with possible values from 0-10. Check page 15 of J701D Protocol Manual PDF for more details
+	ExpandedDeviceStatus2 uint8              // For now holds info for battery charging status. Expected that JoinTech will place more status info in the future.
+	SerialNo              uint8              // Sequence number of positional or alarm data recieved
+	Length                uint16             // The data length from the date field to the data serial number in bytes
+	HighEvents            *HighByteLockEvent // high bytes events (LongTimeUnlocking, WrongPassword, Swipe, LowBattery, CoverOpen, CoverClosed, MotorStuck, Reserved)
+	LowEvents             *LowByteLockEvent  // low bytes events (BaseStationPositioning, EnterFence, ExitFence, RopeCut, Vibration, AckRequired, RopeInserted, MotorLocked)
 }
 
 // Returns mobile station ID
@@ -195,25 +193,6 @@ func (p *PALData) AddLowEvent(key LowByteLockEvent) {
 
 func (p *PALData) HasLowEvent(key LowByteLockEvent) bool {
 	return *p.LowEvents&key != 0
-}
-
-type DeviceStatuses struct {
-	baseStationPositioning     bool
-	enterFenceAlarm            bool
-	exitFenceAlarm             bool
-	lockRopeCutAlarm           bool
-	vibrationAlarm             bool
-	platformACKCommandRequired bool
-	lockRopeState              bool
-	motorState                 bool
-	longTimeUnlockingAlarm     bool
-	wrongPasswordAlarm         bool
-	swipeIllegalRFIDCardAlarm  bool
-	lowBatteryAlarm            bool
-	backCoverOpenedAlarm       bool
-	backCoverStatus            bool
-	motorStuckAlarm            bool
-	reserved                   bool
 }
 
 // Decode takes a pointer to a slice of bytes with raw data and return Decoded struct

@@ -190,13 +190,3 @@ func TestHexToBinary(t *testing.T) {
 	assert.NotEmpty(t, result)
 	assert.Equal(t, expected, result)
 }
-
-func TestDeviceStatus(t *testing.T) {
-	hexValue := "20E0"
-
-	expected := DeviceStatuses{baseStationPositioning: true, enterFenceAlarm: false, exitFenceAlarm: false, lockRopeCutAlarm: false, vibrationAlarm: false, platformACKCommandRequired: false, lockRopeState: true, motorState: true, longTimeUnlockingAlarm: true, wrongPasswordAlarm: false, swipeIllegalRFIDCardAlarm: false, lowBatteryAlarm: false, backCoverOpenedAlarm: false, backCoverStatus: false, motorStuckAlarm: false, reserved: false}
-
-	result := deviceStatus(hexValue)
-	assert.NotEmpty(t, result)
-	assert.Equal(t, expected, result)
-}

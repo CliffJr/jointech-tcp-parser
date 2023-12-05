@@ -247,56 +247,6 @@ func hexToBinary(hexStr string) (string, error) {
 	return binaryStr, nil
 }
 
-func deviceStatus(value string) DeviceStatuses {
-	binaryStr, err := hexToBinary(value)
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-
-	deviceStatus := parseDeviceStatus(binaryStr)
-
-	var result DeviceStatuses
-
-	for state, value := range deviceStatus {
-		switch state {
-		case "baseStationPositioning":
-			result.baseStationPositioning = value
-		case "enterFenceAlarm":
-			result.enterFenceAlarm = value
-		case "exitFenceAlarm":
-			result.exitFenceAlarm = value
-		case "lockRopeCutAlarm":
-			result.lockRopeCutAlarm = value
-		case "vibrationAlarm":
-			result.vibrationAlarm = value
-		case "platformACKCommandRequired":
-			result.platformACKCommandRequired = value
-		case "lockRopeState":
-			result.lockRopeState = value
-		case "motorState":
-			result.motorState = value
-		case "longTimeUnlockingAlarm":
-			result.longTimeUnlockingAlarm = value
-		case "wrongPasswordAlarm":
-			result.wrongPasswordAlarm = value
-		case "swipeIllegalRFIDCardAlarm":
-			result.swipeIllegalRFIDCardAlarm = value
-		case "lowBatteryAlarm":
-			result.lowBatteryAlarm = value
-		case "backCoverOpenedAlarm":
-			result.backCoverOpenedAlarm = value
-		case "backCoverStatus":
-			result.backCoverStatus = value
-		case "motorStuckAlarm":
-			result.motorStuckAlarm = value
-		case "reserved":
-			result.reserved = value
-		}
-	}
-
-	return result
-}
-
 func parseDeviceStatus(binaryStr string) map[string]bool {
 	deviceStatus := make(map[string]bool)
 
