@@ -100,19 +100,6 @@ func (p *PALData) LAC() uint16 {
 	return uint16(p.CellIdPositionCode & 0x0000FFFF)
 }
 
-// Element represent one IO element, before storing in a db do a conversion to IO datatype (1B, 2B, 4B, 8B)
-type Element struct {
-	Length uint16 // Length of element, this should be uint16 because Codec 8 extended has 2Byte of IO len
-	Name   uint16 // IO element ID
-	Value  []byte // Value of the element represented by slice of bytes
-}
-
-// DeviceStates - various states and alarms of the device
-type DeviceStates struct {
-	Name  string `json:"name"`
-	Value bool   `json:"value"`
-}
-
 func (k HighByteLockEvent) String() string {
 	if k > LongTimeUnlocking {
 		return fmt.Sprintf("<unknown key: %d>", k)
