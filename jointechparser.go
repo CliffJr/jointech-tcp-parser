@@ -62,7 +62,6 @@ const (
 type PALData struct {
 	UtimeMs               uint64             // Utime is Time in mili seconds
 	Utime                 uint64             // Utime is Time in seconds
-	Priority              uint8              // JT does not provide this value
 	Lat                   float64            // Latitude (between 850000000 and -850000000), fits float64
 	Lng                   float64            // Longitude (between 1800000000 and -1800000000), fits float64
 	Angle                 int32              // Direction in degrees from the JT docs In degrees
@@ -75,8 +74,8 @@ type PALData struct {
 	BatteryLevel          uint8              // Percentage of available battery level
 	CellIdPositionCode    uint32             // Most signifficant 2 bytes for Cell ID are stored first and lower 2 bytes for Pos code come next
 	Mcc                   uint16             // Country code
-	GSMSignalQuality      uint8              // a byte representing GSM signal strength (99 is for no signal detection)
-	FenceAlarmID          uint8              // entry and exit fence aleam ID (10 fences are supported)
+	GSMSignalQuality      uint8              // A byte representing GSM signal strength (99 is for no signal detection)
+	FenceAlarmID          uint8              // Entry and exit fence aleam ID (10 fences are supported)
 	MNCHighByte           uint8              // Higher byte part of mobile operator code
 	MNCLowByte            uint8              // Lower byte part of mobile operator code
 	ExpandedDeviceStatus  uint8              // Contains wake up source with possible values from 0-10. Check page 15 of J701D Protocol Manual PDF for more details
@@ -356,10 +355,6 @@ func Decode(bs *[]byte) (Decoded, error) {
 		}
 
 		decodedData.Distance = parsedMileage
-
-		// parse priority will be nil because JT does not provide that value
-		decodedData.Priority = 0
-
 		// parse num. of visible satellites VisSat
 		//i=31
 		parsedSatellites, err := b2n.ParseBs2Uint8(bs, i)
@@ -456,10 +451,8 @@ func Decode(bs *[]byte) (Decoded, error) {
 			return Decoded{}, fmt.Errorf("Decode error, %v", err)
 		}
 
-		//48 868822040248195F 16 places it's not in hex it's in ascii format
+		//48 868822040248195F 15 places it's not in hex it's in ascii format
 		p := (*bs)[i : i+15]
-		// get high level byte
-		// 86882204024819 + (5F -> 5)
 		decoded.IMEI = *(*string)(unsafe.Pointer(&p))
 		//63
 		i = i + 15

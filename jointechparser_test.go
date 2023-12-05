@@ -71,7 +71,6 @@ func TestDecodeSingleRecord(t *testing.T) {
 			{
 				UtimeMs:               162259,
 				Utime:                 0xa2,
-				Priority:              0,
 				Lat:                   22348310,
 				Lng:                   113550543,
 				Angle:                 304,
