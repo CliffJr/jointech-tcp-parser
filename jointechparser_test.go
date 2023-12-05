@@ -114,6 +114,7 @@ func TestDecodeSingleRecord(t *testing.T) {
 
 	// Pass the address of the byte slice to the Decode function
 	decoded, err := Decode(&res)
+	assert.False(t, decoded.ContainsHealthcheck)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, decoded)
 	assert.Equal(t, expectedDecoded, decoded)
