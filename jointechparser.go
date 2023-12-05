@@ -188,7 +188,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 
 	// check for minimum packet size - healthcheck has 16 bytes
 	if len(*bs) < 16 {
-		return Decoded{}, fmt.Errorf("Minimum packet size is 45 Bytes, got %v", len(*bs))
+		return Decoded{}, fmt.Errorf("Minimum packet size is 16 Bytes, got %v", len(*bs))
 	}
 
 	// check for JT packet validity
@@ -211,14 +211,14 @@ func Decode(bs *[]byte) (Decoded, error) {
 		//// determine protocol header in packet
 		decodedProtocolHeader, err := b2n.ParseBs2Uint8(bs, i)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error decodedProtocolHeader, %v", err)
 		}
 		decoded.ProtocolHeader = strconv.Itoa(int(decodedProtocolHeader))
 
 		i = (i + 1) //1
 		decoded.TerminalID, err = b2n.ParseBs2String(bs, i, 5)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error TerminalID, %v", err)
 		}
 
 		// determine protocol version in packet
@@ -226,7 +226,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		i = (i + 5) //6
 		parsedProtocol, err := b2n.ParseBs2Uint8(bs, i)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert uint64 error, %v", err)
+			return Decoded{}, fmt.Errorf("Convert uint64 error parsedProtocol, %v", err)
 		}
 
 		decoded.ProtocolVersion = strconv.Itoa(int(parsedProtocol))
@@ -235,7 +235,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		i = (i + 1) //7
 		decodedDeviceType, err := b2n.ParseBs2Uint8(bs, i)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error decodedDeviceType, %v", err)
 		}
 		// higher bits A = (N & 11110000) >> 4
 		decoded.DeviceType = (decodedDeviceType & b1) >> 4
@@ -247,27 +247,27 @@ func Decode(bs *[]byte) (Decoded, error) {
 		i = (i + 1) //8
 		decodedData.Length, err = b2n.ParseBs2Uint16(bs, i)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error Length, %v", err)
 		}
 
 		// determine date in packet
 		i = (i + 2) //10
 		decodedData.Date, err = b2n.ParseBs2String(bs, i, 3)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error Date, %v", err)
 		}
 		i = (i + 3) //13
 		// determine time in packet
 		decodedData.Time, err = b2n.ParseBs2String(bs, i, 3)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error Time, %v", err)
 		}
 		i = (i + 3) //16
 
 		// Convert string to uint64
 		parsedTimeUint64, err := strconv.ParseUint(decodedData.Time, 10, 64)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert uint64 error, %v", err)
+			return Decoded{}, fmt.Errorf("Convert uint64 error parsedTimeUint64, %v", err)
 		}
 
 		decodedData.UtimeMs = parsedTimeUint64
@@ -283,7 +283,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		// Convert string to uint32
 		parsedLatInt32, err := strconv.ParseUint(parsedLat, 10, 64)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Convert error, %v", err)
+			return Decoded{}, fmt.Errorf("Convert error parsedLatInt32, %v", err)
 		}
 
 		decodedData.Lat = float64(parsedLatInt32)
@@ -430,7 +430,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		//46
 		i = i + 1
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error ExpandedDeviceStatus, %v", err)
 		}
 
 		// determine MNC High Byte in packet
@@ -439,7 +439,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		//47
 		i = i + 1
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error MNCHighByte, %v", err)
 		}
 
 		// determine ExpandedDeviceStatus2 in packet
@@ -448,7 +448,7 @@ func Decode(bs *[]byte) (Decoded, error) {
 		//48
 		i = i + 1
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error ExpandedDeviceStatus2, %v", err)
 		}
 
 		//48 868822040248195F 15 places it's not in hex it's in ascii format
