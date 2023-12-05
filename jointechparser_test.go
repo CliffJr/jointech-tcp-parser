@@ -188,6 +188,7 @@ func TestDecodeMultiplePosDataWithHealthcheckAsLast(t *testing.T) {
 	// 0 - 0x28 14 - 0x54 15 - 0x29
 	// Pass the address of the byte slice to the Decode function
 	decoded, err := Decode(&byteData)
+	assert.True(t, decoded.ContainsHealthcheck)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, decoded)
 	assert.Equal(t, "8000620011", decoded.TerminalID)
@@ -227,6 +228,7 @@ func TestDecodeMultiplePosDataWithHealthcheckAsFirst(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotEmpty(t, decoded)
 	assert.Equal(t, "8000620011", decoded.TerminalID)
+	assert.True(t, decoded.ContainsHealthcheck)
 	assert.Len(t, decoded.Data, 3)
 	const mcc uint16 = 460
 	assert.Equal(t, mcc, decoded.Data[0].Mcc)
@@ -241,6 +243,7 @@ func TestDecodeHealthcheckOnly(t *testing.T) {
 	// bs[0] = 0x28 bs[14] = 0x54 bs[15] = 0x29
 	// Pass the address of the byte slice to the Decode function
 	decoded, err := Decode(&byteData)
+	assert.True(t, decoded.ContainsHealthcheck)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, decoded)
 	assert.Equal(t, "8000620011", decoded.TerminalID)
