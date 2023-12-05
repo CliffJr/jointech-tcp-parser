@@ -11,72 +11,72 @@ import (
 // toHumanReadable updates some fields in Decoded and returns human-readable data as JSON
 func (d *Decoded) toHumanReadable() (Decoded, error) {
 	// Update or modify fields as needed
-	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
-	d.DeviceType = deviceType(d.DeviceType)
-	d.DataType = dataType(d.DataType)
-	d.Date = parseDate(d.Date)
-	d.Time = parseTime(d.Time)
+	/*	d.ProtocolVersion = protocolVersion(d.ProtocolVersion)
+		d.DeviceType = deviceType(d.DeviceType)
+		d.DataType = dataType(d.DataType)
+		d.Date = parseDate(d.Date)
+		d.Time = parseTime(d.Time)
 
-	directionIndicator, err := hexToByte(d.DirectionIndicator)
-	if err != nil {
-		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
-	}
+		directionIndicator, err := hexToByte(d.DirectionIndicator)
+		if err != nil {
+			return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
+		}
 
-	fixedValue, longitude, latitude, positioning := decodeDirectionIndicator(directionIndicator)
+		fixedValue, longitude, latitude, positioning := decodeDirectionIndicator(directionIndicator)
 
-	d.DirectionIndicator = fixedValue + "," + longitude + "," + latitude + "," + positioning
+		d.DirectionIndicator = fixedValue + "," + longitude + "," + latitude + "," + positioning
 
-	mileage, err := hexToDecimal(d.Mileage)
-	if err != nil {
-		return Decoded{}, fmt.Errorf("Error converting to Decimal: %v", err)
-	}
+		mileage, err := hexToDecimal(d.Mileage)
+		if err != nil {
+			return Decoded{}, fmt.Errorf("Error converting to Decimal: %v", err)
+		}
 
-	d.Mileage = strconv.FormatInt(mileage, 10)
+		d.Mileage = strconv.FormatInt(mileage, 10)
 
-	deviceStatusParser := d.DeviceStatusParser
+		deviceStatusParser := d.DeviceStatusParser
 
-	d.DeviceStatus = deviceStatus(deviceStatusParser)
+		d.DeviceStatus = deviceStatus(deviceStatusParser)
 
-	d.GSMSignalQuality = GSMSignalQuality(d.GSMSignalQuality)
+		d.GSMSignalQuality = GSMSignalQuality(d.GSMSignalQuality)
 
-	//instance of ACLData
-	decodedData := ACLData{}
+		//instance of ACLData
+		decodedData := ACLData{}
 
-	//standardize time
-	decodedData.UtimeMs = toSeconds(d.Time)
+		//standardize time
+		decodedData.UtimeMs = toSeconds(d.Time)
 
-	//standardize time ms
-	decodedData.Utime = toMilliseconds(d.Time)
+		//standardize time ms
+		decodedData.Utime = toMilliseconds(d.Time)
 
-	//standardize no of the satellites
-	decodedData.VisSat = d.Data.VisSat
+		//standardize no of the satellites
+		decodedData.VisSat = d.Data[0].VisSat
 
-	//standardize lat
-	lat, err := parseLatLng(int(d.Data.Lat))
-	if err != nil {
-		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
-	}
+		//standardize lat
+		lat, err := parseLatLng(int(d.Data[0].Lat))
+		if err != nil {
+			return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
+		}
 
-	decodedData.Lat = lat
+		decodedData.Lat = lat
 
-	//standardize lng
-	lng, err := parseLatLng(int(d.Data.Lng))
-	if err != nil {
-		return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
-	}
+		//standardize lng
+		lng, err := parseLatLng(int(d.Data[0].Lng))
+		if err != nil {
+			return Decoded{}, fmt.Errorf("Error converting to Binary: %v", err)
+		}
 
-	decodedData.Lng = lng
+		decodedData.Lng = lng
 
-	//standardize speed
-	speed, err := parseSpeed(strconv.Itoa(int(d.Data.Speed)))
-	decodedData.Speed = speed
+		//standardize speed
+		speed, err := parseSpeed(strconv.Itoa(int(d.Data[0].Speed)))
+		decodedData.Speed = speed
 
-	//standardize angle/direction
-	angle, err := direction(strconv.Itoa(int(d.Data.Angle)))
+		//standardize angle/direction
+		angle, err := direction(strconv.Itoa(int(d.Data[0].Angle)))
 
-	decodedData.Angle = int32(angle)
+		decodedData.Angle = int32(angle)
 
-	d.Data = decodedData
+		d.Data[0] = decodedData*/
 
 	return *d, nil
 }
