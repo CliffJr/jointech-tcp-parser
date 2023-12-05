@@ -56,6 +56,9 @@ func TestDecodeSingleRecord(t *testing.T) {
 	assert.Nil(t, err)
 	res := append(dst1, hd2...)
 	res = append(res, dst3...)
+
+	highByteStat := HighByteLockEvent(0x20)
+	lowByteStat := LowByteLockEvent(0xE0)
 	expectedDecoded := Decoded{
 		ProtocolHeader:  "36",
 		ProtocolVersion: "25",
@@ -87,7 +90,8 @@ func TestDecodeSingleRecord(t *testing.T) {
 				ExpandedDeviceStatus2: 0x01,
 				SerialNo:              86,
 				Length:                52,
-				DeviceStatusParser:    "20E0",
+				HighEvents:            &highByteStat,
+				LowEvents:             &lowByteStat,
 				DirectionIndicator:    "F",
 				DeviceStatus: DeviceStatuses{
 					baseStationPositioning:     false,
@@ -121,6 +125,10 @@ func TestDecodeSingleRecord(t *testing.T) {
 	//dec = 4242 hex = 0x1092
 	var expCellId uint16 = 4242
 	assert.Equal(t, expCellId, decoded.Data[0].CellId())
+	assert.True(t, decoded.Data[0].HasHighEvent(CoverClosed))
+	assert.False(t, decoded.Data[0].HasHighEvent(CoverOpen))
+	assert.True(t, decoded.Data[0].HasLowEvent(MotorLocked))
+	assert.True(t, decoded.Data[0].HasLowEvent(RopeInserted))
 	//dec = 10342 hex = 0x2866
 	var expLAC uint16 = 10342
 	assert.Equal(t, expLAC, decoded.Data[0].LAC())

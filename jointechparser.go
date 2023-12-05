@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/CliffJr/b2n"
@@ -30,6 +31,32 @@ type Decoded struct {
 	ContainsHealthcheck bool
 	Data                []PALData // Slice containing P(ositional)A(larm)L(ocation) data
 }
+
+type HighByteLockEvent byte
+
+const (
+	LongTimeUnlocking HighByteLockEvent = 1 << iota
+	WrongPassword
+	Swipe
+	LowBattery
+	CoverOpen
+	CoverClosed
+	MotorStuck
+	Reserved
+)
+
+type LowByteLockEvent byte
+
+const (
+	BaseStationPositioning LowByteLockEvent = 1 << iota
+	EnterFence
+	ExitFence
+	RopeCut
+	Vibration
+	AckRequired
+	RopeInserted
+	MotorLocked
+)
 
 // PALData represent a package of positional or alarm data recieved by a JT701D smart lock
 type PALData struct {
@@ -58,6 +85,8 @@ type PALData struct {
 	ExpandedDeviceStatus2 uint8  // For now holds info for battery charging status. Expected that JoinTech will place more status info in the future.
 	SerialNo              uint8  // Sequence number of positional or alarm data recieved
 	Length                uint16 // The data length from the date field to the data serial number in bytes
+	HighEvents            *HighByteLockEvent
+	LowEvents             *LowByteLockEvent
 }
 
 // Returns mobile station ID
@@ -84,6 +113,88 @@ type Element struct {
 type DeviceStates struct {
 	Name  string `json:"name"`
 	Value bool   `json:"value"`
+}
+
+func (k HighByteLockEvent) String() string {
+	if k > LongTimeUnlocking {
+		return fmt.Sprintf("<unknown key: %d>", k)
+	}
+	switch k {
+	case Reserved:
+		return "Reserved"
+	case MotorStuck:
+		return "MotorStuck"
+	case CoverClosed:
+		return "CoverClosed"
+	case CoverOpen:
+		return "CoverOpen"
+	case LowBattery:
+		return "LowBattery"
+	case Swipe:
+		return "Swipe"
+	case WrongPassword:
+		return "WrongPassword"
+	case LongTimeUnlocking:
+		return "LongTimeUnlocking"
+	}
+
+	// multiple keys
+	var names []string
+	for key := Reserved; key < LongTimeUnlocking; key <<= 1 {
+		if k&key != 0 {
+			names = append(names, key.String())
+		}
+	}
+	return strings.Join(names, "|")
+}
+
+func (k LowByteLockEvent) String() string {
+	if k > BaseStationPositioning {
+		return fmt.Sprintf("<unknown key: %d>", k)
+	}
+	switch k {
+	case MotorLocked:
+		return "MotorLocked"
+	case RopeInserted:
+		return "RopeInserted"
+	case AckRequired:
+		return "AckRequired"
+	case Vibration:
+		return "Vibration"
+	case RopeCut:
+		return "RopeCut"
+	case ExitFence:
+		return "ExitFence"
+	case EnterFence:
+		return "EnterFence"
+	case BaseStationPositioning:
+		return "BaseStationPositioning"
+	}
+
+	// multiple keys
+	var names []string
+	for key := MotorLocked; key < BaseStationPositioning; key <<= 1 {
+		if k&key != 0 {
+			names = append(names, key.String())
+		}
+	}
+	return strings.Join(names, "|")
+}
+
+func (p *PALData) AddHighEvent(key HighByteLockEvent) {
+	(*p.HighEvents) |= key
+}
+
+func (p *PALData) HasHighEvent(key HighByteLockEvent) bool {
+	return (*p.HighEvents)&key != 0
+}
+
+func (p *PALData) AddLowEvent(key LowByteLockEvent) {
+	*p.LowEvents |= key
+}
+
+func (p *PALData) HasLowEvent(key LowByteLockEvent) bool {
+	return *p.LowEvents&key != 0
 }
 
 type DeviceStatuses struct {
@@ -301,28 +412,30 @@ func Decode(bs *[]byte) (Decoded, error) {
 		if err != nil {
 			return Decoded{}, fmt.Errorf("Decode error BindVehicleID, %v", err)
 		}
-		// just a parser to determine device status in packet
 		//i=36
-		decodedDeviceStatus, err := b2n.ParseBs2String(bs, i, 2)
-		//38
-		i = i + 2
+		highByteStat, err := b2n.ParseBs2Uint8(bs, i)
 		if err != nil {
-			return Decoded{}, fmt.Errorf("Decode error decodedDeviceStatus, %v", err)
+			return Decoded{}, fmt.Errorf("Decode error highByteStat, %v", err)
 		}
-
-		decodedData.DeviceStatusParser = decodedDeviceStatus
-
-		//just initialize for a now
-		deviceStatuses := DeviceStatuses{}
-		decodedData.DeviceStatus = deviceStatuses
+		hb := HighByteLockEvent(highByteStat)
+		decodedData.HighEvents = &(hb)
+		//37
+		i = i + 1
+		lowByteStat, err := b2n.ParseBs2Uint8(bs, i)
+		if err != nil {
+			return Decoded{}, fmt.Errorf("Decode error highByteStat, %v", err)
+		}
+		lb := LowByteLockEvent(lowByteStat)
+		decodedData.LowEvents = &lb
+		//38
+		i = i + 1
 		//i=38
 		decodedData.BatteryLevel, err = b2n.ParseBs2Uint8(bs, i)
-		//39
-		i = i + 1
 		if err != nil {
 			return Decoded{}, fmt.Errorf("Decode error BatteryLevel, %v", err)
 		}
-
+		//39
+		i = i + 1
 		// determine Cell Id Position Code in packet
 		//i=39
 		decodedData.CellIdPositionCode, err = b2n.ParseBs2Uint32(bs, i)
