@@ -197,15 +197,29 @@ func Decode(bs *[]byte) (Decoded, error) {
 	}
 
 	// 1- loop start wirh i=0, 2-loop start with i=62
+outerLoop:
 	for i := 0; i < len(*bs); {
 		if (*bs)[i] == 0x28 {
-			if (*bs)[i+13] == 0x4A && (*bs)[i+14] == 0x54 {
+			if len(*bs) > i+15 && (*bs)[i+13] == 0x4A && (*bs)[i+14] == 0x54 && (*bs)[i+15] == 0x29 {
 				decoded.ContainsHealthcheck = true
 				p := (*bs)[i+1 : i+11]
 				decoded.TerminalID = *(*string)(unsafe.Pointer(&p))
 				i = i + 16
+				continue outerLoop
 			}
-			continue
+			// TODO: implement parsing command output at this point
+			if len(*bs) > i+15 && (*bs)[i+13] != 0x4A && (*bs)[i+14] != 0x54 && (*bs)[i+15] != 0x29 {
+				for i < len(*bs) && (*bs)[i] != 0x29 {
+					i++
+				}
+				i = i + 1
+				continue outerLoop
+			}
+
+		}
+
+		if i >= len(*bs) {
+			break
 		}
 
 		//// determine protocol header in packet
